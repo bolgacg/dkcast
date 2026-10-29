@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DKcast</title>
+<meta name="description" content="DKcast by Bolgaç Gülen: tomorrow's hourly temperature, sunshine, rain and wind at Danish weather stations, from a model trained on every public weather model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#14202b;--soft:#5b6875;--line:#e3e9f0;--sun:#f5a524;--rain:#2f7fd8;--warm:#e4572e;--cool:#3a86c8;--accent:#0f766e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+h1{font-size:28px;margin:0;letter-spacing:-.02em}h1 span{color:var(--accent)}
+.by{color:var(--soft);font-size:14px}
+select{font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:16px 0 4px;min-width:220px}
+.hero{background:linear-gradient(135deg,#1f6fb2,#5fb0e8);color:#fff;border-radius:18px;padding:22px;margin-top:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.hero .big{font-size:52px;font-weight:700;line-height:1}.hero .lab{opacity:.85;font-size:13px}
+.hero .stats{display:flex;gap:22px;flex-wrap:wrap}.hero .stats div b{display:block;font-size:22px}
+.strip{display:flex;gap:8px;overflow-x:auto;padding:14px 2px 6px;scroll-snap-type:x mandatory}
+.h{flex:0 0 74px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center;scroll-snap-align:start}
+.h .t{font-size:12px;color:var(--soft)}.h .ic{font-size:22px;margin:4px 0}.h .tp{font-weight:600;font-size:17px}
+.h .rg{font-size:11px;color:var(--soft)}.h .rn{font-size:12px;color:var(--rain);font-weight:500}.h .wd{font-size:11px;color:var(--soft)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
+.card h2{font-size:15px;margin:0 0 8px}svg{width:100%;height:auto;display:block}
+.note{color:var(--soft);font-size:13px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kpi b{font-size:22px;display:block}.kpi{background:#f7fafc;border-radius:12px;padding:12px}
+a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
+</style>
+</head>
+<body><div class="wrap">
+<header><h1>DK<span>cast</span></h1><div class="by">by Bolgaç Gülen</div></header>
+<select id="st" aria-label="Weather station"></select>
+<div class="hero" id="hero"></div>
+<div class="strip" id="strip"></div>
+<div class="card"><h2>Temperature, with the range it lands in 8 days out of 10</h2><svg id="tchart" viewBox="0 0 880 220"></svg></div>
+<div class="card"><h2>Sunshine (minutes per hour) and chance of rain</h2><svg id="schart" viewBox="0 0 880 180"></svg></div>
+<div class="card"><h2>How good is it?</h2>
+<div class="grid">
+<div class="kpi"><b>13%</b>less temperature error than the best public forecast</div>
+<div class="kpi"><b>16%</b>less error on sunshine and on rain</div>
+<div class="kpi"><b>16%</b>less wind error than the best public model</div>
+<div class="kpi"><b>28%</b>less temperature error than yr.no's own forecast, corrected</div>
+</div>
+<p class="note">Tested once on 1 January to 18 October 2026, hours the model never saw, at DMI stations, against 12 public weather models (ECMWF IFS and AIFS, DWD ICON, DMI HARMONIE, MET Norway, UK Met Office, NOAA GFS and others), each given its own correction per station. DKcast reads all of them at once and learns, station by station, which to trust in which weather.</p></div>
+<footer>Forecast issued <span id="gen"></span> for <span id="day"></span>, hours in Danish time. Inputs: public forecasts via Open-Meteo; truth: DMI open data. Method and full study: <a href="https://bolgacg.github.io/dk-wind-blend/">Denmark wind and weather study</a>. Code: <a href="https://github.com/bolgacg/dk-wind-blend">github.com/bolgacg/dk-wind-blend</a>.</footer>
+</div>
+<script>
+const NS="http://www.w3.org/2000/svg";let D=null;
+const icon=h=>h.rain>=60?"🌧️":h.rain>=30?"🌦️":h.sun>=40?"☀️":h.sun>=10?"⛅":(new Date(h.t+"Z").getUTCHours()+1)%24<7||(new Date(h.t+"Z").getUTCHours()+1)%24>18?"🌙":"☁️";
+const loc=t=>new Date(t+"Z").toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Copenhagen"});
+function el(n,a,p){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e}
+function draw(id){const s=D.stations[id],H=s.hours;
+ const tmax=Math.max(...H.map(h=>h.temp)),tmin=Math.min(...H.map(h=>h.temp)),sun=H.reduce((a,h)=>a+h.sun,0),rmax=Math.max(...H.map(h=>h.rain));
+ const w=H.filter(h=>h.wind!=null).map(h=>h.wind);
+ document.getElementById("hero").innerHTML=`<div><div class="lab">${s.name}, tomorrow</div><div class="big">${tmax.toFixed(0)}°</div><div class="lab">low ${tmin.toFixed(0)}°</div></div>
+ <div class="stats"><div><b>${(sun/60).toFixed(1)} h</b><span class="lab">sunshine</span></div><div><b>${rmax}%</b><span class="lab">highest chance of rain</span></div>${w.length?`<div><b>${Math.max(...w).toFixed(0)} m/s</b><span class="lab">strongest wind</span></div>`:""}</div>`;
+ document.getElementById("strip").innerHTML=H.map(h=>`<div class="h"><div class="t">${loc(h.t)}</div><div class="ic">${icon(h)}</div><div class="tp">${h.temp.toFixed(0)}°</div><div class="rg">${h.temp_lo.toFixed(0)} to ${h.temp_hi.toFixed(0)}</div><div class="rn">${h.rain}%</div>${h.wind!=null?`<div class="wd">${h.wind.toFixed(0)} m/s</div>`:""}</div>`).join("");
+ const T=document.getElementById("tchart");T.innerHTML="";const lo=Math.floor(Math.min(...H.map(h=>h.temp_lo))-1),hi=Math.ceil(Math.max(...H.map(h=>h.temp_hi))+1);
+ const X=i=>40+i*(820/23),Y=v=>190-(v-lo)/(hi-lo)*170;
+ for(let v=lo;v<=hi;v+=Math.max(1,Math.round((hi-lo)/5))){el("line",{x1:40,x2:860,y1:Y(v),y2:Y(v),stroke:"#e3e9f0"},T);el("text",{x:4,y:Y(v)+4,"font-size":12,fill:"#5b6875"},T).textContent=v+"°"}
+ el("path",{d:"M"+H.map((h,i)=>X(i)+","+Y(h.temp_hi)).join("L")+"L"+H.map((h,i)=>X(23-i)+","+Y(H[23-i].temp_lo)).join("L")+"Z",fill:"rgba(228,87,46,.15)"},T);
+ el("path",{d:"M"+H.map((h,i)=>X(i)+","+Y(h.temp)).join("L"),fill:"none",stroke:"#e4572e","stroke-width":3},T);
+ H.forEach((h,i)=>{if(i%3==0)el("text",{x:X(i),y:212,"font-size":12,fill:"#5b6875","text-anchor":"middle"},T).textContent=loc(h.t)});
+ const S=document.getElementById("schart");S.innerHTML="";const Ys=v=>150-v/60*130,Yr=v=>150-v/100*130;
+ H.forEach((h,i)=>{el("rect",{x:X(i)-12,y:Ys(h.sun),width:24,height:150-Ys(h.sun),rx:4,fill:"#f5a524",opacity:.85},S)});
+ el("path",{d:"M"+H.map((h,i)=>X(i)+","+Yr(h.rain)).join("L"),fill:"none",stroke:"#2f7fd8","stroke-width":2.5},S);
+ H.forEach((h,i)=>{if(i%3==0)el("text",{x:X(i),y:172,"font-size":12,fill:"#5b6875","text-anchor":"middle"},S).textContent=loc(h.t)});
+ el("text",{x:44,y:14,"font-size":12,fill:"#f5a524"},S).textContent="bars: sunshine, 0 to 60 min";el("text",{x:260,y:14,"font-size":12,fill:"#2f7fd8"},S).textContent="line: chance of rain, 0 to 100%";
+}
+fetch("dkcast.json?"+Date.now()).then(r=>r.json()).then(d=>{D=d;const sel=document.getElementById("st");
+ const ids=Object.keys(d.stations).sort((a,b)=>d.stations[a].name.localeCompare(d.stations[b].name));
+ sel.innerHTML=ids.map(i=>`<option value="${i}">${d.stations[i].name}</option>`).join("");
+ let pick=null;try{pick=localStorage.getItem("dkcast_st")}catch(e){}
+ sel.value=pick&&d.stations[pick]?pick:(d.stations["06126"]?"06126":ids[0]);
+ sel.onchange=()=>{try{localStorage.setItem("dkcast_st",sel.value)}catch(e){}draw(sel.value)};
+ document.getElementById("gen").textContent=new Date(d.generated).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"Europe/Copenhagen"});
+ document.getElementById("day").textContent=new Date(d.day).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});draw(sel.value)});
+</script>
+</body></html>
