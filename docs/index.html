@@ -45,6 +45,7 @@ a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
 .tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;font-size:12px;line-height:1.45;padding:7px 10px;border-radius:8px;z-index:9;display:none;white-space:nowrap}
 @media (max-width:600px){.hero .big{font-size:44px}}
 </style>
+<link rel="stylesheet" href="alt-dk.css">
 </head>
 <body><div class="wrap">
 <header><h1>DK<span>cast</span></h1><div class="by">by Bolgaç Gülen</div></header>
@@ -55,21 +56,27 @@ a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
 </div>
 <p class="found" id="found"></p>
 <div class="tabs" id="tabs"></div>
-<div class="hero" id="hero"></div>
+<div data-group="hero" data-opt="cur"><div class="hero" id="hero"></div></div>
+<div data-group="hero" data-opt="a"><div id="heroA"></div></div>
+<div data-group="hero" data-opt="b"><div id="heroB"></div></div>
+<div data-group="hero" data-opt="c"><div id="heroC"></div></div>
 <div class="strip" id="strip"></div>
-<div class="card"><h2>Temperature, with the <span class="term" data-tip="DKcast's own uncertainty: the real temperature should land inside this range 8 hours out of 10. DKcast widens it when the weather is hard to call; one of the signals it reads is how far the big public models disagree.">range it lands in 8 times out of 10</span></h2><svg class="chart" id="tchart" viewBox="0 0 640 230"></svg></div>
-<div class="card"><h2>Sunshine (minutes per hour) and chance of rain</h2><svg class="chart" id="schart" viewBox="0 0 640 200"></svg></div>
-<div class="card"><h2 id="mapt">Across Denmark</h2><svg class="map" id="map" viewBox="0 0 560 460" role="img" aria-label="Map of Denmark with the forecast at each weather station"></svg>
-<p class="note">Each dot is a DMI weather station. Tap one to see its forecast.</p></div>
+<div class="card"><h2>Temperature, with the <span class="term" data-tip="DKcast's own uncertainty: the real temperature should land inside this range 8 hours out of 10. DKcast widens it when the weather is hard to call; one of the signals it reads is how far the big public models disagree.">range it lands in 8 times out of 10</span></h2><div data-group="temp" data-opt="cur"><svg class="chart" id="tchart" viewBox="0 0 640 230"></svg></div><div data-group="temp" data-opt="a"><svg class="chart" id="tA"></svg></div><div data-group="temp" data-opt="b"><svg class="chart" id="tB"></svg></div><div data-group="temp" data-opt="c"><svg class="chart" id="tC"></svg></div><div data-group="temp" data-opt="d"><svg class="chart" id="tD"></svg></div></div>
+<div data-group="sun" data-opt="cur a b" data-notag><div class="card"><h2>Sunshine (minutes per hour) and chance of rain</h2><div data-group="sun" data-opt="cur"><svg class="chart" id="schart" viewBox="0 0 640 200"></svg></div><div data-group="sun" data-opt="a"><svg class="chart" id="sA"></svg></div><div data-group="sun" data-opt="b"><svg class="chart" id="sB"></svg></div></div></div><div data-group="sun" data-opt="c"><p class="note">Sun and rain are drawn inside the temperature chart in this option (temperature C).</p></div>
+<div data-group="map" data-opt="cur"><div class="card"><h2 id="mapt">Across Denmark</h2><svg class="map" id="map" viewBox="0 0 560 460" role="img" aria-label="Map of Denmark with the forecast at each weather station"></svg>
+<p class="note">Each dot is a DMI weather station. Tap one to see its forecast.</p></div></div>
+<div data-group="map" data-opt="a"><div class="card"><h2 id="mapAt">Across Denmark</h2><div class="mchips" id="mapAchips"></div><svg class="map" id="mapA" viewBox="0 0 560 460" role="img" aria-label="Map of Denmark with the forecast at each weather station"></svg><div class="mlegend" id="mapAleg"></div><p class="note">Each circle is a DMI weather station; circles that would overlap are nudged apart, with a thin line to the real spot. Hover for the full forecast, tap to open it.</p></div></div>
+<div data-group="map" data-opt="b"><div class="card"><h2 id="mapBt">Across Denmark</h2><div class="mchips" id="mapBchips"></div><svg class="map" id="mapB" viewBox="0 0 560 460" role="img" aria-label="Weather map of Denmark with the sky and temperature at each station"></svg><p class="note">The sky symbol and temperature at each DMI weather station for the chosen hour. Hover for the full forecast, tap to open it.</p></div></div>
 <div class="card" id="ycard"><h2>Yesterday: forecast against what was measured</h2><div id="ybody"></div></div>
 <div class="card"><h2>How good is it?</h2>
-<div class="grid">
+<div data-group="good" data-opt="a"><div id="gA"></div></div><div data-group="good" data-opt="b"><div id="gB"></div></div><div data-group="good" data-opt="c"><div id="gC"></div></div>
+<div data-group="good" data-opt="cur"><div class="grid">
 <div class="kpi"><b>13%</b>less temperature error than the best public forecast</div>
 <div class="kpi"><b>16%</b>less sunshine error, and 16% better at calling rain or no rain</div>
 <div class="kpi"><b>16%</b>less wind error than the best public model</div>
 <div class="kpi"><b>28%</b>less temperature error than yr.no's own forecast, corrected</div>
 </div>
-<p class="note">Tested once on 1 January to 18 October 2026, on hours the model never saw, at DMI stations, against 12 <span class="term" data-tip="ECMWF IFS and AIFS, DWD ICON, DMI HARMONIE, MET Norway, UK Met Office, NOAA GFS and others. Each one was also given its own correction per station before the comparison.">public weather models</span>, each given its own correction per station. <span class="term" data-tip="My own weather model: it reads every public model at once and learns, station by station, which to trust in which weather, and gives a range as well as a single number.">DKcast</span> reads all of them at once and learns, station by station, which to trust in which weather.</p></div>
+<p class="note">Tested once on 1 January to 18 October 2026, on hours the model never saw, at DMI stations, against 12 <span class="term" data-tip="ECMWF IFS and AIFS, DWD ICON, DMI HARMONIE, MET Norway, UK Met Office, NOAA GFS and others. Each one was also given its own correction per station before the comparison.">public weather models</span>, each given its own correction per station. <span class="term" data-tip="My own weather model: it reads every public model at once and learns, station by station, which to trust in which weather, and gives a range as well as a single number.">DKcast</span> reads all of them at once and learns, station by station, which to trust in which weather.</p></div></div>
 <div class="card"><h2>About these forecasts</h2>
 <p class="note" style="margin:0">The forecasts are for DMI's weather stations, not for towns. Search a town and the page picks the nearest station; a station a few kilometres away usually has the same weather, but coasts and hills can differ. DKcast started as an energy project, forecasting Danish wind power for the electricity market; this weather site is a fun offshoot of the same model.</p></div>
 <footer>Inputs: public forecasts via Open-Meteo. Truth: DMI open data. Hours in Danish time. Method and full study: <a href="https://bolgacg.github.io/dk-wind-blend/">Denmark wind and weather study</a>. Code: <a href="https://github.com/bolgacg/dk-wind-blend">github.com/bolgacg/dk-wind-blend</a>.</footer>
@@ -148,7 +155,7 @@ function ycard(){const Y=D.yesterday,B=document.getElementById("ybody");
  for(let v=lo;v<=hi;v+=Math.max(1,Math.round((hi-lo)/4))){el("line",{x1:52,x2:626,y1:Yy(v),y2:Yy(v),stroke:"#e3e9f0"},S);el("text",{x:4,y:Yy(v)+5,"font-size":20,fill:"#5b6875"},S,v+"°")}
  el("path",{d:"M"+H.map((h,i)=>X(i)+","+Yy(h.temp)).join("L"),fill:"none",stroke:"#e4572e","stroke-width":3},S);
  H.forEach((h,i)=>{if(h.temp_obs!=null)el("circle",{cx:X(i),cy:Yy(h.temp_obs),r:4.5,fill:"#14202b"},S)});axisX(S,H,X,194);hover(S,H,X,10,174,h=>`Forecast ${h.temp.toFixed(1)} °C<br>Measured ${h.temp_obs!=null?h.temp_obs.toFixed(1)+" °C":"no reading"}`)}
-function pick(k){sid=k;document.getElementById("st").value=k;try{localStorage.setItem("dkcast_st",k)}catch(e){}draw();ycard()}
+function pick(k){sid=k;setTimeout(()=>typeof yFix==='function'&&yFix(),0);document.getElementById("st").value=k;try{localStorage.setItem("dkcast_st",k)}catch(e){}draw();ycard()}
 function near(lat,lon){let best=null,bd=1e9;for(const k in D.meta){const m=D.meta[k],dx=(m.lon-lon)*Math.cos(lat*Math.PI/180)*111.3,dy=(m.lat-lat)*111.3,d=Math.hypot(dx,dy);if(d<bd){bd=d;best=k}}return[best,bd]}
 document.getElementById("sf").onsubmit=async e=>{e.preventDefault();const q=document.getElementById("q").value.trim(),F=document.getElementById("found");if(!q)return;
  F.textContent="Searching...";
@@ -166,4 +173,6 @@ Promise.all([fetch("dkcast.json?"+Date.now()).then(r=>r.json()),fetch("dk.json")
  T.querySelectorAll("button").forEach(b=>b.onclick=()=>{day=+b.dataset.i;T.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x==b));draw()});
  draw();ycard()});
 </script>
+<script src="alt-dk2.js"></script>
+<script src="alt-dk.js"></script>
 </body></html>

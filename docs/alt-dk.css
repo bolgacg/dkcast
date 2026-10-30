@@ -1,0 +1,56 @@
+/* alternatives for the DKcast hero card and station map (projects-b4, 30 Oct 2026); light mode only */
+:root{color-scheme:light}
+[hidden]{display:none!important}
+.wrap{padding-bottom:150px}
+.opt-tag{display:inline-block;font:600 12px/1.2 Inter,system-ui,sans-serif;color:#7c2d12;border:1px dashed #c2410c;border-radius:4px;padding:4px 8px;margin:12px 0 0;background:#fff7ed}
+body.notags .opt-tag{display:none}
+
+/* shared hero shell */
+.hx{color:#fff;border-radius:18px;padding:20px 22px;margin-top:12px;background:linear-gradient(135deg,#1f6fb2,#5fb0e8)}
+.hx .lab{opacity:.92;font-size:13px}
+.hx .big{font-size:52px;font-weight:700;line-height:1}
+.hx .top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;align-items:center}
+.hx .stats{display:flex;gap:22px;flex-wrap:wrap}.hx .stats b{display:block;font-size:22px}
+.hx .ic{width:64px;height:64px;background:rgba(255,255,255,.88);border-radius:16px;padding:6px;flex:none}
+@media (max-width:600px){.hx .big{font-size:44px}.hx .stats{gap:16px}}
+
+/* hero A: day ribbon */
+.ribbon{margin-top:16px;background:rgba(255,255,255,.14);border-radius:12px;padding:10px 10px 4px}
+.ribbon svg{width:100%;height:auto;display:block}
+
+/* hero B: one sentence */
+.hx .say{font-size:22px;line-height:1.35;font-weight:500;margin:6px 0 14px;max-width:640px}
+.hx .say b{font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:rgba(255,255,255,.18);border-radius:999px;padding:6px 12px;font-size:13px}
+.chips b{font-size:15px;margin-right:4px}
+@media (max-width:600px){.hx .say{font-size:19px}}
+
+/* hero C: range first, sky-tinted */
+.hx.sky-sun{background:linear-gradient(135deg,#1f78c8 0%,#4aa3e6 55%,#f2b84b 130%)}
+.hx.sky-part{background:linear-gradient(135deg,#2c6ea8,#7aaad3)}
+.hx.sky-cloud{background:linear-gradient(135deg,#4e6680,#8ea3b8)}
+.hx.sky-rain{background:linear-gradient(135deg,#34506e,#5f7f9f)}
+.rangebox{margin-top:14px;background:rgba(255,255,255,.95);color:#14202b;border-radius:12px;padding:12px 14px}
+.rangebox p{margin:0 0 6px;font-size:14px}
+.rangebox svg{width:100%;height:auto;display:block}
+
+/* maps */
+.mchips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mchips button{border-radius:999px;padding:6px 14px;font-size:13px}
+.mchips button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mlegend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--soft);margin:6px auto 0;max-width:560px}.mlegend span:not(.bar){white-space:nowrap}.mlegend span:last-child{white-space:normal}
+.mlegend .bar{height:10px;flex:0 1 180px;border-radius:5px}
+.map .st:hover circle,.map .st:focus circle{stroke:#14202b;stroke-width:2.5}
+
+/* picker */
+#picker{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:20;background:#14202b;color:#fff;border-radius:12px;padding:8px 10px;font:12.5px/1.2 Inter,system-ui,sans-serif;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,.2);width:max-content;max-width:calc(100vw - 20px)}
+#picker .grp{display:flex;align-items:center;gap:4px}
+#picker .grp>span{color:#c9d3de;margin-right:3px}
+#picker button{background:transparent;color:#fff;border:1px solid #5b6875;border-radius:6px;padding:5px 9px;cursor:pointer;font:inherit}
+#picker button:hover{border-color:#fff}
+#picker button[aria-pressed=true]{background:#c2410c;border-color:#c2410c}
+
+@media (max-width:600px){.ec{display:none}}
+#picker{display:none!important}
+.opt-tag{display:none!important}
