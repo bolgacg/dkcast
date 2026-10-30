@@ -42,6 +42,7 @@ button{font:inherit;padding:9px 14px;border:1px solid var(--line);border-radius:
 .term{border-bottom:1px dotted var(--soft);position:relative;cursor:help}
 .term:hover::after{content:attr(data-tip);position:absolute;left:0;top:130%;width:260px;background:var(--ink);color:#fff;font-size:12px;line-height:1.4;padding:8px 10px;border-radius:8px;z-index:5;font-weight:400}
 a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;font-size:12px;line-height:1.45;padding:7px 10px;border-radius:8px;z-index:9;display:none;white-space:nowrap}
 @media (max-width:600px){.hero .big{font-size:44px}}
 </style>
 </head>
@@ -56,7 +57,7 @@ a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
 <div class="tabs" id="tabs"></div>
 <div class="hero" id="hero"></div>
 <div class="strip" id="strip"></div>
-<div class="card"><h2>Temperature, with the <span class="term" data-tip="The range the real temperature should land in 8 hours out of 10. It is wider when the public models disagree.">range it lands in 8 times out of 10</span></h2><svg class="chart" id="tchart" viewBox="0 0 640 230"></svg></div>
+<div class="card"><h2>Temperature, with the <span class="term" data-tip="DKcast's own uncertainty: the real temperature should land inside this range 8 hours out of 10. DKcast widens it when the weather is hard to call; one of the signals it reads is how far the big public models disagree.">range it lands in 8 times out of 10</span></h2><svg class="chart" id="tchart" viewBox="0 0 640 230"></svg></div>
 <div class="card"><h2>Sunshine (minutes per hour) and chance of rain</h2><svg class="chart" id="schart" viewBox="0 0 640 200"></svg></div>
 <div class="card"><h2 id="mapt">Across Denmark</h2><svg class="map" id="map" viewBox="0 0 560 460" role="img" aria-label="Map of Denmark with the forecast at each weather station"></svg>
 <p class="note">Each dot is a DMI weather station. Tap one to see its forecast.</p></div>
@@ -73,6 +74,7 @@ a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
 <p class="note" style="margin:0">The forecasts are for DMI's weather stations, not for towns. Search a town and the page picks the nearest station; a station a few kilometres away usually has the same weather, but coasts and hills can differ. DKcast started as an energy project, forecasting Danish wind power for the electricity market; this weather site is a fun offshoot of the same model.</p></div>
 <footer>Inputs: public forecasts via Open-Meteo. Truth: DMI open data. Hours in Danish time. Method and full study: <a href="https://bolgacg.github.io/dk-wind-blend/">Denmark wind and weather study</a>. Code: <a href="https://github.com/bolgacg/dk-wind-blend">github.com/bolgacg/dk-wind-blend</a>.</footer>
 </div>
+<div class="tip" id="tip"></div>
 <script>
 const NS="http://www.w3.org/2000/svg";let D=null,LAND=null,day=0,sid=null;
 const TZ="Europe/Copenhagen";
@@ -103,6 +105,12 @@ function draw(){const H=hours(),m=D.meta[sid],isToday=day==0;
  const nowEl=document.querySelector(".h.now");if(nowEl)nowEl.parentNode.scrollLeft=nowEl.offsetLeft-20;else document.getElementById("strip").scrollLeft=0;
  tchart(H);schart(H);map();
  document.getElementById("found").textContent=document.getElementById("found").dataset.keep==sid?document.getElementById("found").textContent:"";}
+// hover: one invisible column per hour shows the exact values and a guide line
+function hover(S,H,X,top,bot,fmt){const n=H.length-1,w=580/n,guide=el("line",{x1:0,x2:0,y1:top,y2:bot,stroke:"#14202b","stroke-dasharray":"3 3",opacity:0},S),tip=document.getElementById("tip");
+ H.forEach((h,i)=>{const r=el("rect",{x:X(i)-w/2,y:top,width:w,height:bot-top,fill:"transparent"},S);
+  r.addEventListener("pointerenter",e=>{guide.setAttribute("x1",X(i));guide.setAttribute("x2",X(i));guide.setAttribute("opacity",.5);tip.innerHTML=`<b>${loc(h.t)}</b><br>`+fmt(h);tip.style.display="block"});
+  r.addEventListener("pointermove",e=>{const x=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8);tip.style.left=x+"px";tip.style.top=(e.clientY-tip.offsetHeight-12)+"px"});
+  r.addEventListener("pointerleave",()=>{guide.setAttribute("opacity",0);tip.style.display="none"})})}
 function axisX(S,H,X,y){H.forEach((h,i)=>{if(i%4==0)el("text",{x:X(i),y,"font-size":20,fill:"#5b6875","text-anchor":"middle"},S,loc(h.t))})}
 function tchart(H){const T=document.getElementById("tchart");T.innerHTML="";const n=H.length-1;
  const lo=Math.floor(Math.min(...H.map(h=>h.temp_lo))-1),hi=Math.ceil(Math.max(...H.map(h=>h.temp_hi))+1);
@@ -110,13 +118,13 @@ function tchart(H){const T=document.getElementById("tchart");T.innerHTML="";cons
  for(let v=lo;v<=hi;v+=Math.max(1,Math.round((hi-lo)/4))){el("line",{x1:52,x2:626,y1:Y(v),y2:Y(v),stroke:"#e3e9f0"},T);el("text",{x:4,y:Y(v)+5,"font-size":20,fill:"#5b6875"},T,v+"°")}
  el("path",{d:"M"+H.map((h,i)=>X(i)+","+Y(h.temp_hi)).join("L")+"L"+H.map((h,i)=>X(n-i)+","+Y(H[n-i].temp_lo)).join("L")+"Z",fill:"rgba(228,87,46,.15)"},T);
  el("path",{d:"M"+H.map((h,i)=>X(i)+","+Y(h.temp)).join("L"),fill:"none",stroke:"#e4572e","stroke-width":3},T);
- axisX(T,H,X,222)}
+ axisX(T,H,X,222);hover(T,H,X,10,200,h=>`Temperature ${h.temp.toFixed(1)} °C<br>Range ${h.temp_lo.toFixed(1)} to ${h.temp_hi.toFixed(1)} °C`)}
 function schart(H){const S=document.getElementById("schart");S.innerHTML="";const n=H.length-1;
  const X=i=>46+i*(580/n),Ys=v=>166-v/60*136,Yr=v=>166-v/100*136;
  [0,30,60].forEach(v=>{el("line",{x1:52,x2:626,y1:Ys(v),y2:Ys(v),stroke:"#e3e9f0"},S);el("text",{x:4,y:Ys(v)+5,"font-size":20,fill:"#f5a524"},S,v)});
  H.forEach((h,i)=>el("rect",{x:X(i)-9,y:Ys(h.sun),width:18,height:166-Ys(h.sun),rx:3,fill:"#f5a524",opacity:.85},S));
  el("path",{d:"M"+H.map((h,i)=>X(i)+","+Yr(h.rain)).join("L"),fill:"none",stroke:"#2f7fd8","stroke-width":3},S);
- axisX(S,H,X,192);
+ axisX(S,H,X,192);hover(S,H,X,20,170,h=>`Sunshine ${h.sun} min<br>Chance of rain ${h.rain}%`);
  el("text",{x:50,y:16,"font-size":20,fill:"#c47f0c"},S,"bars: sunshine, minutes");el("text",{x:320,y:16,"font-size":20,fill:"#2f7fd8"},S,"line: chance of rain, %")}
 const PX=lon=>(lon-7.9)/(15.3-7.9)*560,PY=lat=>(57.8-lat)/(57.8-54.5)*460;
 function map(){const M=document.getElementById("map");M.innerHTML="";
@@ -128,7 +136,7 @@ function map(){const M=document.getElementById("map");M.innerHTML="";
   el("circle",{cx:x,cy:y,r:sel?17:14,fill:tcol(t),stroke:sel?"#14202b":"#fff","stroke-width":sel?3:2},g);
   el("text",{x,y:y+5,"font-size":13,"font-weight":700,fill:"#14202b","text-anchor":"middle"},g,t.toFixed(0)+"°");
   if(sel)el("text",{x,y:y-22,"font-size":14,"font-weight":600,fill:"#14202b","text-anchor":"middle"},g,m.name);
-  g.onclick=()=>pick(k);g.onkeydown=e=>{if(e.key=="Enter")pick(k)}})}
+  el("title",{},g,`${m.name}: highest ${t.toFixed(1)} °C`);g.onclick=()=>pick(k);g.onkeydown=e=>{if(e.key=="Enter")pick(k)}})}
 function ycard(){const Y=D.yesterday,B=document.getElementById("ybody");
  if(!Y){const d=new Date(D.days[0].day+"T12:00:00Z");const first=new Date(Math.max(d,new Date("2026-11-01T12:00:00Z")));
   B.innerHTML=`<p class="note" style="margin:0">Every evening's forecast for the next day is kept as it was issued, then checked hour by hour against what DMI measured. The first check appears on ${first.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}.</p>`;return}
@@ -139,7 +147,7 @@ function ycard(){const Y=D.yesterday,B=document.getElementById("ybody");
  const X=i=>46+i*(580/n),Yy=v=>170-(v-lo)/(hi-lo)*156;
  for(let v=lo;v<=hi;v+=Math.max(1,Math.round((hi-lo)/4))){el("line",{x1:52,x2:626,y1:Yy(v),y2:Yy(v),stroke:"#e3e9f0"},S);el("text",{x:4,y:Yy(v)+5,"font-size":20,fill:"#5b6875"},S,v+"°")}
  el("path",{d:"M"+H.map((h,i)=>X(i)+","+Yy(h.temp)).join("L"),fill:"none",stroke:"#e4572e","stroke-width":3},S);
- H.forEach((h,i)=>{if(h.temp_obs!=null)el("circle",{cx:X(i),cy:Yy(h.temp_obs),r:4.5,fill:"#14202b"},S)});axisX(S,H,X,194)}
+ H.forEach((h,i)=>{if(h.temp_obs!=null)el("circle",{cx:X(i),cy:Yy(h.temp_obs),r:4.5,fill:"#14202b"},S)});axisX(S,H,X,194);hover(S,H,X,10,174,h=>`Forecast ${h.temp.toFixed(1)} °C<br>Measured ${h.temp_obs!=null?h.temp_obs.toFixed(1)+" °C":"no reading"}`)}
 function pick(k){sid=k;document.getElementById("st").value=k;try{localStorage.setItem("dkcast_st",k)}catch(e){}draw();ycard()}
 function near(lat,lon){let best=null,bd=1e9;for(const k in D.meta){const m=D.meta[k],dx=(m.lon-lon)*Math.cos(lat*Math.PI/180)*111.3,dy=(m.lat-lat)*111.3,d=Math.hypot(dx,dy);if(d<bd){bd=d;best=k}}return[best,bd]}
 document.getElementById("sf").onsubmit=async e=>{e.preventDefault();const q=document.getElementById("q").value.trim(),F=document.getElementById("found");if(!q)return;
