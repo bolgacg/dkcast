@@ -15,6 +15,10 @@ header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap
 h1{font-size:28px;margin:0;letter-spacing:-.02em}h1 span{color:var(--accent)}
 .by{color:var(--soft);font-size:14px}.when{color:var(--soft);font-size:14px;margin:4px 0 0}
 .when b{color:var(--ink)}
+.locknote{font-size:14px;line-height:1.5;background:#eef6f5;border-left:3px solid var(--accent);border-radius:4px;padding:10px 14px;margin:10px 0 0}
+.lockhash{font-size:12.5px;color:var(--soft);margin:6px 0 0;overflow-wrap:anywhere}
+code{font-size:.92em;overflow-wrap:anywhere}
+button[disabled]{color:var(--soft);cursor:default;background:#f7fafc}
 .controls{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px;align-items:center}
 select,input{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:0}
 select{flex:1 1 200px}.search{flex:1 1 220px;display:flex;gap:6px}.search input{flex:1;min-width:0}
@@ -50,6 +54,8 @@ a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
 <body><div class="wrap">
 <header><h1>DK<span>cast</span></h1><div class="by">by Bolgaç Gülen</div></header>
 <p class="when" id="when"></p>
+<p class="locknote">From 7 November 2026, each day's forecast is locked with a SHA-256 hash at 10:30 and the numbers appear after <span id="lockt">12:05</span>, because this model will be entering competitions.</p>
+<p class="lockhash" id="lockhash" hidden></p>
 <div class="controls">
 <select id="st" aria-label="Weather station"></select>
 <form class="search" id="sf"><input id="q" placeholder="Search a town, for example Vejle" aria-label="Search a town"><button>Find</button></form>
@@ -79,7 +85,7 @@ a{color:var(--accent)}footer{margin-top:26px;color:var(--soft);font-size:13px}
 <p class="note">Scored on 1 January to 18 October 2026, on hours outside its training period, at DMI stations, against 12 public weather models. Each is shown in its best version: as issued, or with a per-station correction fitted on 2025, whichever scored best for it. Every lead here is against the best of them for that kind of weather.</p></div></div>
 <div class="card"><h2>About these forecasts</h2>
 <p class="note" style="margin:0">The forecasts are for DMI's weather stations, not for towns. Search a town and the page picks the nearest station; a station a few kilometres away usually has the same weather, but coasts and hills can differ. I built this weather site for fun, next to my wind power forecast for the electricity market.</p></div>
-<footer>Contains data from Open-Meteo (CC BY 4.0) and DMI open data. Hours in Danish time.</footer>
+<footer>To check a day, open <code>forecasts/</code> in the <a href="https://github.com/bolgacg/dkcast/tree/main/forecasts">public repository</a>: <code>&lt;day&gt;.sha256</code> holds the hash and <code>&lt;day&gt;.json</code> the numbers. Run <code>sha256sum -c &lt;day&gt;.sha256</code> in that folder; the commit times show when each one appeared.<br>Contains data from Open-Meteo (CC BY 4.0) and DMI open data. Hours in Danish time.</footer>
 </div>
 <div class="tip" id="tip"></div>
 <script>
@@ -164,13 +170,16 @@ document.getElementById("sf").onsubmit=async e=>{e.preventDefault();const q=docu
   const c=r.results[0],[k,d]=near(c.latitude,c.longitude);pick(k);F.dataset.keep=k;F.textContent=`Nearest weather station to ${c.name}: ${D.meta[k].name}, ${d.toFixed(0)} km away.`}
  catch(err){F.textContent="Search is unavailable right now; pick a station from the list."}};
 Promise.all([fetch("dkcast.json?"+Date.now()).then(r=>r.json()),fetch("dk.json").then(r=>r.json()).catch(()=>null)]).then(([d,land])=>{D=d;LAND=land;
+ const todayCph=new Date().toLocaleDateString("en-CA",{timeZone:TZ}),keep=d.days.filter(x=>x.day>=todayCph);if(keep.length)d.days=keep;
+ const pubT=d.publish_after||"12:05";document.getElementById("lockt").textContent=pubT;
  const sel=document.getElementById("st"),ids=Object.keys(d.meta).sort((a,b)=>d.meta[a].name.localeCompare(d.meta[b].name));
  sel.innerHTML=ids.map(i=>`<option value="${i}">${d.meta[i].name}</option>`).join("");
  let p=null;try{p=localStorage.getItem("dkcast_st")}catch(e){}sid=p&&d.meta[p]?p:(d.meta["06126"]?"06126":ids[0]);sel.value=sid;sel.onchange=()=>pick(sel.value);
  const gen=new Date(d.generated);
- document.getElementById("when").innerHTML=`Forecasts for <b>${dname(d.days[0].day)}</b> and <b>${dname(d.days[1].day)}</b>. Updated <b>${gen.toLocaleString("en-GB",{weekday:"short",hour:"2-digit",minute:"2-digit",timeZone:TZ})}</b>, twice a day.`;
- const T=document.getElementById("tabs");T.innerHTML=d.days.map((x,i)=>`<button aria-pressed="${i==0}" data-i="${i}">${i==0?"Today":"Tomorrow"}, ${new Date(x.day+"T12:00:00Z").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`).join("");
- T.querySelectorAll("button").forEach(b=>b.onclick=()=>{day=+b.dataset.i;T.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x==b));draw()});
+ document.getElementById("when").innerHTML=`${d.days.length>1?`Forecasts for <b>${dname(d.days[0].day)}</b> and <b>${dname(d.days[1].day)}</b>`:`Forecast for <b>${dname(d.days[0].day)}</b>${d.locked?`; ${dname(d.locked.day)} is locked until ${pubT}`:""}`}. Updated <b>${gen.toLocaleString("en-GB",{weekday:"short",hour:"2-digit",minute:"2-digit",timeZone:TZ})}</b>.`;
+ if(d.locked){const L=document.getElementById("lockhash");L.hidden=false;L.innerHTML=`SHA-256 for ${dname(d.locked.day)}: <code>${d.locked.sha256}</code>`}
+ const T=document.getElementById("tabs");T.innerHTML=d.days.map((x,i)=>`<button aria-pressed="${i==0}" data-i="${i}">${i==0?"Today":"Tomorrow"}, ${new Date(x.day+"T12:00:00Z").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`).join("");if(d.locked)T.insertAdjacentHTML("beforeend",`<button disabled>Tomorrow: locked until ${pubT}</button>`);
+ T.querySelectorAll("button:not([disabled])").forEach(b=>b.onclick=()=>{day=+b.dataset.i;T.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x==b));draw()});
  draw();ycard()});
 </script>
 <script src="alt-dk2.js"></script>
